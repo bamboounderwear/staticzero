@@ -72,9 +72,13 @@ function generatePage(filePath) {
 // Build the entire site by processing files in the /pages folder.
 function buildSite() {
   const pagesDir = path.join(__dirname, 'pages');
-  // Change output directory from "dist" to "public" to align with common conventions.
-  const outputDir = path.join(__dirname, 'public');
-  fs.mkdirSync(outputDir, { recursive: true });
+  const outputDir = path.join(__dirname, 'dist');
+
+  // Clean the output directory first
+  if (fs.existsSync(outputDir)) {
+    fs.rmSync(outputDir, { recursive: true });
+  }
+  fs.mkdirSync(outputDir);
 
   // Recursively process directories.
   function processDirectory(dir, outDir) {
@@ -82,7 +86,7 @@ function buildSite() {
       const fullPath = path.join(dir, item.name);
       const outPath = path.join(outDir, item.name);
       if (item.isDirectory()) {
-        fs.mkdirSync(outPath, { recursive: true });
+        if (!fs.existsSync(outPath)) fs.mkdirSync(outPath);
         processDirectory(fullPath, outPath);
       } else if (item.isFile() && path.extname(item.name) === '.html') {
         const pageContent = generatePage(fullPath);
@@ -93,7 +97,13 @@ function buildSite() {
   }
 
   processDirectory(pagesDir, outputDir);
-  console.log('Site build complete. Output directory:', outputDir);
+  console.log(`\nBuild completed! Files generated in ${outputDir}`);
 }
 
-buildSite();
+// Exit with error code if build fails
+try {
+  buildSite();
+} catch (error) {
+  console.error('Build failed:', error);
+  process.exit(1);
+}
