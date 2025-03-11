@@ -98,6 +98,11 @@ function buildSite() {
 
   processDirectory(pagesDir, outputDir);
   console.log(`\nBuild completed! Files generated in ${outputDir}`);
+
+  // Log additional information in production
+  if (process.env.NODE_ENV === 'production') {
+    console.log('Production build completed');
+  }
 }
 
 // Exit with error code if build fails
