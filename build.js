@@ -72,11 +72,9 @@ function generatePage(filePath) {
 // Build the entire site by processing files in the /pages folder.
 function buildSite() {
   const pagesDir = path.join(__dirname, 'pages');
-  const outputDir = path.join(__dirname, 'dist');
-
-  if (!fs.existsSync(outputDir)) {
-    fs.mkdirSync(outputDir);
-  }
+  // Change output directory from "dist" to "public" to align with common conventions.
+  const outputDir = path.join(__dirname, 'public');
+  fs.mkdirSync(outputDir, { recursive: true });
 
   // Recursively process directories.
   function processDirectory(dir, outDir) {
@@ -84,7 +82,7 @@ function buildSite() {
       const fullPath = path.join(dir, item.name);
       const outPath = path.join(outDir, item.name);
       if (item.isDirectory()) {
-        if (!fs.existsSync(outPath)) fs.mkdirSync(outPath);
+        fs.mkdirSync(outPath, { recursive: true });
         processDirectory(fullPath, outPath);
       } else if (item.isFile() && path.extname(item.name) === '.html') {
         const pageContent = generatePage(fullPath);
@@ -95,6 +93,7 @@ function buildSite() {
   }
 
   processDirectory(pagesDir, outputDir);
+  console.log('Site build complete. Output directory:', outputDir);
 }
 
 buildSite();
