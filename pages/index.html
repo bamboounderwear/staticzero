@@ -19,43 +19,43 @@ template: page.html
     </div>
   </div>
 
-  <div class="container mt-5">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2>Title</h2>
-        <h5 class="text-end">Subtitle</h5>
+  <section class="container my-4">
+    <!-- Header with title and subtitle -->
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <h2 class="mb-0">Section Title</h2>
+      <h5 class="mb-0">Subtitle</h5>
     </div>
-    <div class="row g-4"> <!-- Grid gap of 1.5rem (g-4) -->
-        <div class="col-md-8">
-            <!-- Content for the first column in the first row -->
-            <p>First Column in First Row</p>
-        </div>
-        <div class="col-md-4">
-            <!-- Content for the second column in the first row -->
-            <p>Second Column in First Row</p>
-        </div>
+    
+    <!-- First row: 2 columns (8 and 4 on md and up, full-width on mobile) -->
+    <div class="row g-3">
+      <div class="col-12 col-md-8">
+        <div class="p-3 border bg-light">Col 1 (8 on md+)</div>
+      </div>
+      <div class="col-12 col-md-4">
+        <div class="p-3 border bg-light">Col 2 (4 on md+)</div>
+      </div>
     </div>
-    <div class="row g-4"> <!-- Grid gap of 1.5rem (g-4) -->
-        <div class="col-md-4">
-            <!-- Content for the first column in the second row -->
-            <p>First Column in Second Row</p>
-        </div>
-        <div class="col-md-4">
-            <!-- Content for the second column in the second row -->
-            <p>Second Column in Second Row</p>
-        </div>
-        <div class="col-md-4">
-            <!-- Content for the third column in the second row -->
-            <p>Third Column in Second Row</p>
-        </div>
+    
+    <!-- Second row: 3 columns (4 each on md and up, full-width on mobile) -->
+    <div class="row g-3 mt-3">
+      <div class="col-12 col-md-4">
+        <div class="p-3 border bg-light">Col 1 (4 on md+)</div>
+      </div>
+      <div class="col-12 col-md-4">
+        <div class="p-3 border bg-light">Col 2 (4 on md+)</div>
+      </div>
+      <div class="col-12 col-md-4">
+        <div class="p-3 border bg-light">Col 3 (4 on md+)</div>
+      </div>
     </div>
-    <div class="row g-4"> <!-- Grid gap of 1.5rem (g-4) -->
-        <div class="col-md-6">
-            <!-- Content for the first column in the third row -->
-            <p>First Column in Third Row</p>
-        </div>
-        <div class="col-md-6">
-            <!-- Content for the second column in the third row -->
-            <p>Second Column in Third Row</p>
-        </div>
+    
+    <!-- Third row: 2 columns (6 each on md and up, full-width on mobile) -->
+    <div class="row g-3 mt-3">
+      <div class="col-12 col-md-6">
+        <div class="p-3 border bg-light">Col 1 (6 on md+)</div>
+      </div>
+      <div class="col-12 col-md-6">
+        <div class="p-3 border bg-light">Col 2 (6 on md+)</div>
+      </div>
     </div>
-</div>
+  </section>
