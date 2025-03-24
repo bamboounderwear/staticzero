@@ -1,11 +1,13 @@
 import { getStore, getDeployStore } from "@netlify/blobs";
 
-// Use production (global) store if deploy context is production, otherwise use deploy-specific store.
+// Updated getBlobStore function that supplies a deployID when using getDeployStore.
 function getBlobStore(name) {
   if (Netlify.context && Netlify.context.deploy && Netlify.context.deploy.context === 'production') {
     return getStore(name);
   }
-  return getDeployStore(name);
+  // Use the deploy.id from the context if available; fallback to 'local'
+  const deployID = (Netlify.context && Netlify.context.deploy && Netlify.context.deploy.id) || 'local';
+  return getDeployStore({ name, deployID });
 }
 
 const store = getBlobStore("pages");
