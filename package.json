@@ -1,13 +1,9 @@
 {
-    "name": "netlify-blob-pages",
+    "name": "notion-like-netlify-app",
     "version": "1.0.0",
-    "description": "A simple Notion-like web app using Netlify Blobs",
-    "scripts": {
-      "build": "echo 'No build step needed' && exit 0"
-    },
+    "private": true,
     "dependencies": {
-      "@netlify/functions": "latest",
-      "@netlify/blobs": "latest"
+      "@netlify/blobs": "*"
     }
   }
   
