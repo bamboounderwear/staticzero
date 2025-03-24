@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Netlify Blob Pages</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      margin: 1rem;
+    }
+    #pageList {
+      border: 1px solid #ccc; 
+      padding: 1rem; 
+      width: 300px; 
+      float: left;
+    }
+    #editor {
+      margin-left: 320px; 
+      padding: 1rem;
+    }
+    #pageList h2 {
+      margin-top: 0;
+    }
+    button {
+      margin: 0.25rem 0;
+      cursor: pointer;
+    }
+    .hidden {
+      display: none;
+    }
+    .page-item {
+      cursor: pointer;
+      margin: 0.25rem 0;
+      padding: 0.25rem;
+      border-bottom: 1px dashed #ccc;
+    }
+    .page-item:hover {
+      background-color: #f0f0f0;
+    }
+    textarea {
+      width: 100%;
+      height: 300px;
+    }
+  </style>
+</head>
+<body>
+  <div id="pageList">
+    <h2>All Pages</h2>
+    <div id="pagesContainer"></div>
+    <button id="createPageBtn">Create New Page</button>
+  </div>
+
+  <div id="editor" class="hidden">
+    <h2 id="editorTitle"></h2>
+    <textarea id="contentArea"></textarea>
+    <div>
+      <button id="saveBtn">Save</button>
+      <button id="deleteBtn" style="background: #f88;">Delete</button>
+    </div>
+  </div>
+
+  <script src="./script.js"></script>
+</body>
+</html>
