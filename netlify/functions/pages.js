@@ -12,7 +12,7 @@ function getBlobStore(name) {
 
 const store = getBlobStore("pages");
 
-export default async (req, context) => {
+export default async function handler(req, context) {
   const url = new URL(req.url);
   const basePath = "/api/pages";
   // Get the relative path after the base (will be empty or "/{id}")
@@ -109,7 +109,7 @@ export default async (req, context) => {
       headers: { "Content-Type": "application/json" }
     });
   }
-};
+}
 
 export const config = {
   path: "/api/pages/*"
