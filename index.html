@@ -70,30 +70,30 @@
   </div>
   <script>
     const apiBase = '/api/pages';
-
+  
     async function listPages() {
       const res = await fetch(apiBase);
       const data = await res.json();
       const pageList = document.getElementById('pageList');
       pageList.innerHTML = '';
-      data.pages.forEach(page => {
+      data.forEach(page => {
         const li = document.createElement('li');
         li.textContent = page.id;
         li.onclick = () => loadPage(page.id);
         pageList.appendChild(li);
       });
     }
-
+  
     async function loadPage(id) {
-      const res = await fetch(`${apiBase}/${id}`);
-      if(res.ok) {
+      const res = await fetch(`${apiBase}?id=${encodeURIComponent(id)}`);
+      if (res.ok) {
         const data = await res.json();
         document.getElementById('pageId').value = id;
-        // Extract title from markdown (if it starts with "# ")
+        // Extract title from markdown if it starts with "# "
         const lines = data.content.split('\n');
         let title = '';
         let content = data.content;
-        if(lines[0].startsWith('# ')) {
+        if (lines[0].startsWith('# ')) {
           title = lines[0].substring(2);
           content = lines.slice(2).join('\n');
         }
@@ -103,24 +103,26 @@
         alert('Page not found');
       }
     }
-
+  
     async function savePage() {
       const id = document.getElementById('pageId').value.trim();
       const title = document.getElementById('pageTitle').value.trim();
       const content = document.getElementById('pageContent').value;
-      if(!id) {
+      if (!id) {
         alert('Page ID is required');
         return;
       }
-      const method = await checkPageExists(id) ? 'PUT' : 'POST';
-      const url = method === 'PUT' ? `${apiBase}/${id}` : apiBase;
-      const body = method === 'POST' ? { id, title, content } : { title, content };
+      // Check if the page exists using query parameter
+      const existsRes = await fetch(`${apiBase}?id=${encodeURIComponent(id)}`);
+      const method = existsRes.ok ? 'PUT' : 'POST';
+      const url = apiBase;
+      const body = { id, title, content };
       const res = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body)
       });
-      if(res.ok) {
+      if (res.ok) {
         alert('Page saved!');
         listPages();
       } else {
@@ -128,18 +130,18 @@
         alert('Error: ' + err.error);
       }
     }
-
+  
     async function deletePage() {
       const id = document.getElementById('pageId').value.trim();
-      if(!id) {
+      if (!id) {
         alert('Page ID is required');
         return;
       }
-      if(confirm('Are you sure you want to delete this page?')) {
-        const res = await fetch(`${apiBase}/${id}`, {
+      if (confirm('Are you sure you want to delete this page?')) {
+        const res = await fetch(`${apiBase}?id=${encodeURIComponent(id)}`, {
           method: 'DELETE'
         });
-        if(res.ok) {
+        if (res.ok) {
           alert('Page deleted');
           document.getElementById('pageId').value = '';
           document.getElementById('pageTitle').value = '';
@@ -151,23 +153,19 @@
         }
       }
     }
-
-    async function checkPageExists(id) {
-      const res = await fetch(`${apiBase}/${id}`);
-      return res.ok;
-    }
-
+  
     document.getElementById('newPageBtn').addEventListener('click', () => {
       document.getElementById('pageId').value = '';
       document.getElementById('pageTitle').value = '';
       document.getElementById('pageContent').value = '';
     });
-
+  
     document.getElementById('saveBtn').addEventListener('click', savePage);
     document.getElementById('deleteBtn').addEventListener('click', deletePage);
-
+  
     // Load pages on startup
     listPages();
   </script>
+  
 </body>
 </html>
