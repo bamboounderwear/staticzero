@@ -76,6 +76,11 @@ exports.handler = async (event, context) => {
       body { font-family: Arial, sans-serif; background: #fff; margin: 0; padding: 20px; }
       .container { max-width: 800px; margin: auto; }
       .logout { display: inline-block; margin-top: 20px; padding: 10px 20px; background-color: #4285F4; color: white; text-decoration: none; cursor: pointer; border: none; border-radius: 4px; }
+      #leads-container { margin-top: 20px; }
+      table { width: 100%; border-collapse: collapse; }
+      th, td { border: 1px solid #ddd; padding: 8px; }
+      th { background-color: #f2f2f2; }
+      .download-btn { margin-right: 10px; padding: 8px 16px; background-color: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer; }
     </style>
   </head>
   <body>
@@ -83,13 +88,106 @@ exports.handler = async (event, context) => {
       <h1>Welcome to the Admin Panel</h1>
       <p>Access granted for <strong>${payload.username}</strong>.</p>
       <button class="logout" onclick="logout()">Logout</button>
+      
+      <h2>Leads</h2>
+      <div id="leads-container">
+        <!-- Leads will be loaded here -->
+      </div>
+      <div style="margin-top: 10px;">
+        <button class="download-btn" onclick="downloadJSON()">Download JSON</button>
+        <button class="download-btn" onclick="downloadCSV()">Download CSV</button>
+      </div>
     </div>
+    
     <script>
+      async function loadLeads() {
+        try {
+          const response = await fetch('/.netlify/functions/leads');
+          if (response.ok) {
+            const leads = await response.json();
+            displayLeads(leads);
+          } else {
+            console.error('Failed to load leads:', response.statusText);
+            document.getElementById('leads-container').innerHTML = '<p>Error loading leads.</p>';
+          }
+        } catch (error) {
+          console.error('Error loading leads:', error);
+          document.getElementById('leads-container').innerHTML = '<p>Error loading leads.</p>';
+        }
+      }
+      
+      function displayLeads(leads) {
+        const container = document.getElementById('leads-container');
+        if (!leads || leads.length === 0) {
+          container.innerHTML = '<p>No leads available.</p>';
+          return;
+        }
+        
+        // Create a simple table to display leads.
+        let html = '<table><thead><tr>';
+        // Get headers from the keys of the first lead.
+        const keys = Object.keys(leads[0]);
+        keys.forEach(key => {
+          html += '<th>' + key + '</th>';
+        });
+        html += '</tr></thead><tbody>';
+        leads.forEach(lead => {
+          html += '<tr>';
+          keys.forEach(key => {
+            html += '<td>' + lead[key] + '</td>';
+          });
+          html += '</tr>';
+        });
+        html += '</tbody></table>';
+        container.innerHTML = html;
+      }
+      
+      function downloadJSON() {
+        fetch('/.netlify/functions/leads')
+          .then(response => response.json())
+          .then(leads => {
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(leads, null, 2));
+            const dlAnchorElem = document.createElement('a');
+            dlAnchorElem.setAttribute("href", dataStr);
+            dlAnchorElem.setAttribute("download", "leads.json");
+            dlAnchorElem.click();
+          })
+          .catch(err => console.error('Error downloading JSON', err));
+      }
+      
+      function downloadCSV() {
+        fetch('/.netlify/functions/leads')
+          .then(response => response.json())
+          .then(leads => {
+            if (!leads || leads.length === 0) {
+              alert('No leads to download.');
+              return;
+            }
+            // Determine CSV headers from keys of the first lead.
+            const keys = Object.keys(leads[0]);
+            let csv = keys.join(",") + "\n";
+            leads.forEach(lead => {
+              csv += keys.map(key => {
+                const value = lead[key] ? lead[key].toString() : "";
+                return '"' + value.replace(/"/g, '""') + '"';
+              }).join(",") + "\n";
+            });
+            const dataStr = "data:text/csv;charset=utf-8," + encodeURIComponent(csv);
+            const dlAnchorElem = document.createElement('a');
+            dlAnchorElem.setAttribute("href", dataStr);
+            dlAnchorElem.setAttribute("download", "leads.csv");
+            dlAnchorElem.click();
+          })
+          .catch(err => console.error('Error downloading CSV', err));
+      }
+      
       function logout() {
         fetch('/.netlify/functions/logout')
           .then(() => window.location.href = 'login.html')
           .catch(() => window.location.href = 'login.html');
       }
+      
+      document.addEventListener("DOMContentLoaded", loadLeads);
     </script>
   </body>
   </html>
