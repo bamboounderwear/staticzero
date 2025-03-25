@@ -3,7 +3,8 @@
     "version": "1.0.0",
     "private": true,
     "dependencies": {
-      "@netlify/blobs": "*"
+      "@netlify/blobs": "*",
+      "bcryptjs": "^3.0.2"
     }
   }
   
