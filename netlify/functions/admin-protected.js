@@ -105,7 +105,7 @@ exports.handler = async (event, context) => {
         const response = await fetch('/.netlify/functions/leads');
         if (response.ok) {
           const leads = await response.json();
-          console.log("Leads loaded:", leads); // Debug log
+          console.log("Leads loaded:", leads);
           displayLeads(leads);
         } else {
           console.error('Failed to load leads:', response.statusText);
@@ -124,12 +124,15 @@ exports.handler = async (event, context) => {
         return;
       }
       
-      // Debug: log the first lead to check its keys
-      console.log("First lead keys:", Object.keys(leads[0]));
+      // Merge keys from all leads so that if some have a "timestamp", it is included.
+      const keysSet = new Set();
+      leads.forEach(lead => {
+        Object.keys(lead).forEach(key => keysSet.add(key));
+      });
+      const keys = Array.from(keysSet);
+      console.log("Merged keys:", keys);
       
       let html = '<table><thead><tr>';
-      // Get keys dynamically from the first lead
-      const keys = Object.keys(leads[0]);
       keys.forEach(key => {
         let displayKey = key;
         if (key.toLowerCase() === 'timestamp') {
@@ -179,7 +182,11 @@ exports.handler = async (event, context) => {
             alert('No leads to download.');
             return;
           }
-          const keys = Object.keys(leads[0]);
+          const keysSet = new Set();
+          leads.forEach(lead => {
+            Object.keys(lead).forEach(key => keysSet.add(key));
+          });
+          const keys = Array.from(keysSet);
           let csv = keys.join(",") + "\\n";
           leads.forEach(lead => {
             csv += keys.map(key => {
