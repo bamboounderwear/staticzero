@@ -2,47 +2,67 @@ const crypto = require('crypto');
 
 function verifySessionToken(token) {
   const secret = process.env.SESSION_SECRET;
-  if (!token) return false;
+  if (!token) {
+    console.log("No session token provided");
+    return false;
+  }
   const parts = token.split('.');
-  if (parts.length !== 2) return false;
+  if (parts.length !== 2) {
+    console.log("Invalid token format, parts:", parts);
+    return false;
+  }
   const base64Payload = parts[0];
   const providedSignature = parts[1];
   const expectedSignature = crypto.createHmac('sha256', secret)
                                   .update(base64Payload)
                                   .digest('hex');
-  if (providedSignature !== expectedSignature) return false;
+  if (providedSignature !== expectedSignature) {
+    console.log("Signature mismatch:", { providedSignature, expectedSignature });
+    return false;
+  }
   let payload;
   try {
     payload = JSON.parse(Buffer.from(base64Payload, 'base64').toString('utf8'));
   } catch (e) {
+    console.log("Error parsing token payload:", e);
     return false;
   }
-  // Check if token has expired.
-  if (payload.exp < Date.now()) return false;
+  if (payload.exp < Date.now()) {
+    console.log("Token expired:", { exp: payload.exp, now: Date.now() });
+    return false;
+  }
+  console.log("Token verified successfully:", payload);
   return payload;
 }
 
 exports.handler = async (event, context) => {
-  // Parse cookies from the incoming request.
+  console.log("Admin-protected function triggered");
+  console.log("Request headers:", event.headers);
+  
   const cookieHeader = event.headers.cookie || '';
+  console.log("Cookie header:", cookieHeader);
+  
   const cookies = Object.fromEntries(
     cookieHeader.split(';').map(c => {
       const [key, value] = c.trim().split('=');
       return [key, value];
     })
   );
+  console.log("Parsed cookies:", cookies);
+  
   const token = cookies.session;
   const payload = verifySessionToken(token);
   
   if (!payload) {
-    // If verification fails, return a 401 Unauthorized response.
+    console.log("Token verification failed. Sending 401.");
     return {
       statusCode: 401,
       body: 'Unauthorized'
     };
   }
-
-  // If the session is valid, return the admin page HTML.
+  
+  console.log("Token valid for user:", payload.username);
+  
   const adminHtml = `
   <!DOCTYPE html>
   <html lang="en">
@@ -58,7 +78,7 @@ exports.handler = async (event, context) => {
   <body>
     <div class="container">
       <h1>Welcome to the Admin Panel</h1>
-      <p>This is a protected area.</p>
+      <p>Access granted for <strong>${payload.username}</strong>.</p>
       <button class="logout" onclick="logout()">Logout</button>
     </div>
     <script>
@@ -74,9 +94,7 @@ exports.handler = async (event, context) => {
   
   return {
     statusCode: 200,
-    headers: {
-      'Content-Type': 'text/html'
-    },
+    headers: { 'Content-Type': 'text/html' },
     body: adminHtml
   };
 };

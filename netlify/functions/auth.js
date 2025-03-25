@@ -4,50 +4,53 @@ const crypto = require('crypto');
 // Helper: create a signed session token valid for 1 hour.
 function createSessionToken(username) {
   const payload = {
-    username: username,
-    exp: Date.now() + 3600 * 1000  // expires in 1 hour
+    username,
+    exp: Date.now() + 3600 * 1000 // expires in 1 hour
   };
-  // Encode the payload as base64.
   const base64Payload = Buffer.from(JSON.stringify(payload)).toString('base64');
-  // Use the SESSION_SECRET from environment variables to sign the payload.
   const secret = process.env.SESSION_SECRET;
-  const signature = crypto
-    .createHmac('sha256', secret)
-    .update(base64Payload)
-    .digest('hex');
-  // The final token is the payload and signature separated by a dot.
+  const signature = crypto.createHmac('sha256', secret)
+                          .update(base64Payload)
+                          .digest('hex');
   return `${base64Payload}.${signature}`;
 }
 
 exports.handler = async (event, context) => {
-  // Only allow POST requests.
+  console.log("Auth function triggered");
+  
   if (event.httpMethod !== 'POST') {
+    console.log("Invalid HTTP method:", event.httpMethod);
     return { statusCode: 405, body: 'Method Not Allowed' };
   }
 
   try {
-    // Parse the incoming JSON body (expects { username, password }).
+    console.log("Received event body:", event.body);
     const { username, password } = JSON.parse(event.body);
 
-    // Retrieve credentials from environment variables.
     const storedUsername = process.env.USERNAME;
     const storedPasswordHash = process.env.PASSWORD_HASH;
+    const sessionSecret = process.env.SESSION_SECRET;
 
-    // Check if the username matches.
+    if (!storedUsername || !storedPasswordHash || !sessionSecret) {
+      throw new Error("Missing one or more required environment variables (USERNAME, PASSWORD_HASH, SESSION_SECRET)");
+    }
+
+    console.log(`Received username: "${username}" | Expected username: "${storedUsername}"`);
+
     if (username !== storedUsername) {
+      console.log("Username mismatch");
       return { statusCode: 401, body: 'Unauthorized' };
     }
 
-    // Compare the provided password with the hashed password.
     const isMatch = await bcrypt.compare(password, storedPasswordHash);
     if (!isMatch) {
+      console.log("Password mismatch");
       return { statusCode: 401, body: 'Unauthorized' };
     }
 
-    // Generate a secure, signed session token.
     const sessionToken = createSessionToken(username);
+    console.log("Session token generated:", sessionToken);
 
-    // Return a 200 response with the token set in an HttpOnly, Secure cookie.
     return {
       statusCode: 200,
       headers: {
@@ -56,7 +59,7 @@ exports.handler = async (event, context) => {
       body: JSON.stringify({ message: 'Authenticated successfully!' })
     };
   } catch (error) {
-    // Handle any errors.
-    return { statusCode: 500, body: 'Internal Server Error' };
+    console.error("Error in auth function:", error);
+    return { statusCode: 500, body: 'Internal Server Error: ' + error.message };
   }
 };
