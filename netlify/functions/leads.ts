@@ -21,6 +21,8 @@ export default async function handler(req: Request): Promise<Response> {
     // Save a new lead (the form will use this)
     if (req.method === "PUT") {
       const body = await req.json();
+      // If the client didn't include a timestamp, add one.
+      body.timestamp = body.timestamp || new Date().toISOString();
       // Use a unique key based on timestamp (or include an id from the client if you wish)
       const leadId = body.id || `lead-${Date.now()}`;
       await store.setJSON(leadId, body);
