@@ -55,7 +55,7 @@
   <script>
     document.getElementById('login-form').addEventListener('submit', async function(e) {
       e.preventDefault();
-      
+
       const username = document.getElementById('username').value;
       const password = document.getElementById('password').value;
 
@@ -65,10 +65,10 @@
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ username, password })
         });
-        
+
         if (response.ok) {
-          // Authentication successful – redirect to admin page.
-          window.location.href = 'admin.html';
+          // Authentication successful – redirect to the protected /admin route.
+          window.location.href = '/admin';
         } else {
           // Display error message if credentials are incorrect.
           document.getElementById('error').textContent = 'Invalid credentials. Please try again.';
