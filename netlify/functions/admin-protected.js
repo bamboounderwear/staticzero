@@ -117,22 +117,38 @@ exports.handler = async (event, context) => {
     }
     
     function displayLeads(leads) {
-      const container = document.getElementById('leads-container');
-      if (!leads || leads.length === 0) {
+    const container = document.getElementById('leads-container');
+    if (!leads || leads.length === 0) {
         container.innerHTML = '<p>No leads available.</p>';
         return;
-      }
-      let html = '<table><thead><tr>';
-      const keys = Object.keys(leads[0]);
-      keys.forEach(key => { html += '<th>' + key + '</th>'; });
-      html += '</tr></thead><tbody>';
-      leads.forEach(lead => {
+    }
+    
+    let html = '<table><thead><tr>';
+    // Get keys dynamically from the first lead
+    const keys = Object.keys(leads[0]);
+    keys.forEach(key => {
+        let displayKey = key;
+        if (key === 'timestamp') {
+        displayKey = 'Submission Time';
+        }
+        html += '<th>' + displayKey + '</th>';
+    });
+    html += '</tr></thead><tbody>';
+    
+    leads.forEach(lead => {
         html += '<tr>';
-        keys.forEach(key => { html += '<td>' + lead[key] + '</td>'; });
+        keys.forEach(key => {
+        let value = lead[key];
+        if (key === 'timestamp' && value) {
+            // Format the ISO timestamp to a locale-specific string
+            value = new Date(value).toLocaleString();
+        }
+        html += '<td>' + value + '</td>';
+        });
         html += '</tr>';
-      });
-      html += '</tbody></table>';
-      container.innerHTML = html;
+    });
+    html += '</tbody></table>';
+    container.innerHTML = html;
     }
     
     function downloadJSON() {
