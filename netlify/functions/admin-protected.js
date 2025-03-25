@@ -105,6 +105,7 @@ exports.handler = async (event, context) => {
         const response = await fetch('/.netlify/functions/leads');
         if (response.ok) {
           const leads = await response.json();
+          console.log("Leads loaded:", leads); // Debug log
           displayLeads(leads);
         } else {
           console.error('Failed to load leads:', response.statusText);
@@ -117,38 +118,44 @@ exports.handler = async (event, context) => {
     }
     
     function displayLeads(leads) {
-    const container = document.getElementById('leads-container');
-    if (!leads || leads.length === 0) {
+      const container = document.getElementById('leads-container');
+      if (!leads || leads.length === 0) {
         container.innerHTML = '<p>No leads available.</p>';
         return;
-    }
-    
-    let html = '<table><thead><tr>';
-    // Get keys dynamically from the first lead
-    const keys = Object.keys(leads[0]);
-    keys.forEach(key => {
+      }
+      
+      // Debug: log the first lead to check its keys
+      console.log("First lead keys:", Object.keys(leads[0]));
+      
+      let html = '<table><thead><tr>';
+      // Get keys dynamically from the first lead
+      const keys = Object.keys(leads[0]);
+      keys.forEach(key => {
         let displayKey = key;
-        if (key === 'timestamp') {
-        displayKey = 'Submission Time';
+        if (key.toLowerCase() === 'timestamp') {
+          displayKey = 'Submission Time';
         }
         html += '<th>' + displayKey + '</th>';
-    });
-    html += '</tr></thead><tbody>';
-    
-    leads.forEach(lead => {
+      });
+      html += '</tr></thead><tbody>';
+      
+      leads.forEach(lead => {
         html += '<tr>';
         keys.forEach(key => {
-        let value = lead[key];
-        if (key === 'timestamp' && value) {
-            // Format the ISO timestamp to a locale-specific string
-            value = new Date(value).toLocaleString();
-        }
-        html += '<td>' + value + '</td>';
+          let value = lead[key];
+          if (key.toLowerCase() === 'timestamp' && value) {
+            try {
+              value = new Date(value).toLocaleString();
+            } catch(err) {
+              console.error("Error formatting timestamp:", value, err);
+            }
+          }
+          html += '<td>' + (value || '') + '</td>';
         });
         html += '</tr>';
-    });
-    html += '</tbody></table>';
-    container.innerHTML = html;
+      });
+      html += '</tbody></table>';
+      container.innerHTML = html;
     }
     
     function downloadJSON() {
