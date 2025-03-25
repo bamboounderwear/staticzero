@@ -124,13 +124,20 @@ exports.handler = async (event, context) => {
         return;
       }
       
-      // Merge keys from all leads so that if some have a "timestamp", it is included.
+      // Merge keys from all leads
       const keysSet = new Set();
       leads.forEach(lead => {
         Object.keys(lead).forEach(key => keysSet.add(key));
       });
       const keys = Array.from(keysSet);
       console.log("Merged keys:", keys);
+      
+      // Sort leads so that the newest (by timestamp) appears first.
+      leads.sort((a, b) => {
+        const tsA = a.timestamp ? new Date(a.timestamp).getTime() : 0;
+        const tsB = b.timestamp ? new Date(b.timestamp).getTime() : 0;
+        return tsB - tsA;
+      });
       
       let html = '<table><thead><tr>';
       keys.forEach(key => {
