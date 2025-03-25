@@ -2,170 +2,58 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Notion-like App</title>
+  <title>Lead Generation Form</title>
   <style>
-    /* Simple layout styling */
-    body {
-      font-family: sans-serif;
-      margin: 0;
-      display: flex;
-      height: 100vh;
-    }
-    #sidebar {
-      width: 250px;
-      border-right: 1px solid #ccc;
-      padding: 10px;
-      overflow-y: auto;
-    }
-    #main {
-      flex-grow: 1;
-      padding: 10px;
-      display: flex;
-      flex-direction: column;
-    }
-    #pageList {
-      list-style: none;
-      padding: 0;
-    }
-    #pageList li {
-      padding: 5px;
-      cursor: pointer;
-      border-bottom: 1px solid #eee;
-    }
-    #pageList li:hover {
-      background-color: #f0f0f0;
-    }
-    #editor {
-      flex-grow: 1;
-      display: flex;
-      flex-direction: column;
-    }
-    textarea {
-      flex-grow: 1;
-      width: 100%;
-      resize: none;
-      font-family: monospace;
-    }
-    #controls {
-      margin-top: 10px;
-    }
+    body { font-family: sans-serif; margin: 2rem; }
+    form { max-width: 400px; }
+    label { display: block; margin-top: 1rem; }
+    input { width: 100%; padding: 0.5rem; margin-top: 0.25rem; }
+    button { margin-top: 1rem; padding: 0.5rem 1rem; }
+    #message { margin-top: 1rem; font-weight: bold; }
   </style>
 </head>
 <body>
-  <div id="sidebar">
-    <h3>Pages</h3>
-    <ul id="pageList"></ul>
-    <button id="newPageBtn">New Page</button>
-  </div>
-  <div id="main">
-    <div id="editor">
-      <input type="text" id="pageId" placeholder="Page ID (no spaces)" style="margin-bottom: 5px;">
-      <input type="text" id="pageTitle" placeholder="Page Title" style="margin-bottom: 5px;">
-      <textarea id="pageContent" placeholder="Write your markdown here..."></textarea>
-    </div>
-    <div id="controls">
-      <button id="saveBtn">Save</button>
-      <button id="deleteBtn">Delete</button>
-    </div>
-  </div>
+  <h1>Sign Up for Our Newsletter</h1>
+  <form id="leadForm">
+    <label for="name">Name:</label>
+    <input type="text" id="name" name="name" required>
+
+    <label for="email">Email:</label>
+    <input type="email" id="email" name="email" required>
+
+    <button type="submit">Submit</button>
+  </form>
+
+  <div id="message"></div>
+
   <script>
-    const apiBase = '/api/pages';
-  
-    async function listPages() {
-      const res = await fetch(apiBase);
-      const data = await res.json();
-      const pageList = document.getElementById('pageList');
-      pageList.innerHTML = '';
-      data.forEach(page => {
-        const li = document.createElement('li');
-        li.textContent = page.id;
-        li.onclick = () => loadPage(page.id);
-        pageList.appendChild(li);
-      });
-    }
-  
-    async function loadPage(id) {
-      const res = await fetch(`${apiBase}?id=${encodeURIComponent(id)}`);
-      if (res.ok) {
-        const data = await res.json();
-        document.getElementById('pageId').value = id;
-        // Extract title from markdown if it starts with "# "
-        const lines = data.content.split('\n');
-        let title = '';
-        let content = data.content;
-        if (lines[0].startsWith('# ')) {
-          title = lines[0].substring(2);
-          content = lines.slice(2).join('\n');
-        }
-        document.getElementById('pageTitle').value = title;
-        document.getElementById('pageContent').value = content;
-      } else {
-        alert('Page not found');
-      }
-    }
-  
-    async function savePage() {
-      const id = document.getElementById('pageId').value.trim();
-      const title = document.getElementById('pageTitle').value.trim();
-      const content = document.getElementById('pageContent').value;
-      if (!id) {
-        alert('Page ID is required');
-        return;
-      }
-      // Check if the page exists using query parameter
-      const existsRes = await fetch(`${apiBase}?id=${encodeURIComponent(id)}`);
-      const method = existsRes.ok ? 'PUT' : 'POST';
-      const url = apiBase;
-      const body = { id, title, content };
-      const res = await fetch(url, {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body)
-      });
-      if (res.ok) {
-        alert('Page saved!');
-        listPages();
-      } else {
-        const err = await res.json();
-        alert('Error: ' + err.error);
-      }
-    }
-  
-    async function deletePage() {
-      const id = document.getElementById('pageId').value.trim();
-      if (!id) {
-        alert('Page ID is required');
-        return;
-      }
-      if (confirm('Are you sure you want to delete this page?')) {
-        const res = await fetch(`${apiBase}?id=${encodeURIComponent(id)}`, {
-          method: 'DELETE'
+    document.getElementById('leadForm').addEventListener('submit', async function(event) {
+      event.preventDefault();
+      
+      // Gather form data
+      const name = document.getElementById('name').value;
+      const email = document.getElementById('email').value;
+      const lead = { name, email };
+
+      try {
+        const response = await fetch('/.netlify/functions/leads', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(lead)
         });
-        if (res.ok) {
-          alert('Page deleted');
-          document.getElementById('pageId').value = '';
-          document.getElementById('pageTitle').value = '';
-          document.getElementById('pageContent').value = '';
-          listPages();
+
+        const result = await response.json();
+
+        if (response.ok) {
+          document.getElementById('message').textContent = 'Thank you for signing up!';
+          document.getElementById('leadForm').reset();
         } else {
-          const err = await res.json();
-          alert('Error: ' + err.error);
+          document.getElementById('message').textContent = 'Error: ' + result.error;
         }
+      } catch (error) {
+        document.getElementById('message').textContent = 'Error: ' + error.message;
       }
-    }
-  
-    document.getElementById('newPageBtn').addEventListener('click', () => {
-      document.getElementById('pageId').value = '';
-      document.getElementById('pageTitle').value = '';
-      document.getElementById('pageContent').value = '';
     });
-  
-    document.getElementById('saveBtn').addEventListener('click', savePage);
-    document.getElementById('deleteBtn').addEventListener('click', deletePage);
-  
-    // Load pages on startup
-    listPages();
   </script>
-  
 </body>
 </html>
