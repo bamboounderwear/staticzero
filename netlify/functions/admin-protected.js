@@ -42,9 +42,12 @@ exports.handler = async (event, context) => {
   const cookieHeader = event.headers.cookie || '';
   console.log("Cookie header:", cookieHeader);
   
+  // Updated cookie parsing logic to handle "=" characters in cookie values.
   const cookies = Object.fromEntries(
     cookieHeader.split(';').map(c => {
-      const [key, value] = c.trim().split('=');
+      const parts = c.trim().split('=');
+      const key = parts.shift();
+      const value = parts.join('=');
       return [key, value];
     })
   );
