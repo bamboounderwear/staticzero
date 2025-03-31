@@ -2,14 +2,50 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  <!-- Enable responsive scaling on mobile devices -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Minimal IPFS CMS</title>
   <!-- Include the IPFS HTTP client library via CDN -->
   <script src="https://unpkg.com/ipfs-http-client/dist/index.min.js"></script>
   <style>
-    body { font-family: Arial, sans-serif; max-width: 800px; margin: 2em auto; padding: 1em; }
-    input, textarea { width: 100%; margin-bottom: 1em; padding: 0.5em; font-size: 1em; }
-    button { padding: 0.5em 1em; font-size: 1em; }
-    .output { margin-top: 1em; padding: 1em; background: #f4f4f4; }
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 800px;
+      margin: 2em auto;
+      padding: 1em;
+      box-sizing: border-box;
+    }
+    input, textarea {
+      width: 100%;
+      margin-bottom: 1em;
+      padding: 0.5em;
+      font-size: 1em;
+      box-sizing: border-box;
+    }
+    button {
+      padding: 0.5em 1em;
+      font-size: 1em;
+      cursor: pointer;
+    }
+    .output {
+      margin-top: 1em;
+      padding: 1em;
+      background: #f4f4f4;
+      word-wrap: break-word;
+    }
+    /* Responsive adjustments */
+    @media (max-width: 600px) {
+      body {
+        padding: 0.5em;
+        margin: 1em;
+      }
+      h1 {
+        font-size: 1.5em;
+      }
+      input, textarea, button {
+        font-size: 0.9em;
+      }
+    }
   </style>
 </head>
 <body>
