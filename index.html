@@ -2,123 +2,60 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <!-- Ensures proper scaling on all devices -->
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Lead Generation Form</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Geist+Mono:wght@100..900&family=Geist:wght@100..900&family=Instrument+Sans:ital,wght@0,400..700;1,400..700&family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Space+Mono:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet">
+  <title>Minimal IPFS CMS</title>
+  <!-- Include the IPFS HTTP client library via CDN -->
+  <script src="https://unpkg.com/ipfs-http-client/dist/index.min.js"></script>
   <style>
-    /* Reset margins and paddings; ensure full viewport size */
-    html, body {
-      margin: 0;
-      padding: 0;
-      width: 100%;
-      height: 100%;
-    }
-    /* Use flexbox to center the content vertically and horizontally */
-    body {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      background: #f9f9f9;
-      font-family: "Instrument Sans", sans-serif;
-    }
-    /* Container for the form that adapts responsively */
-    .container {
-      width: 100%;
-      max-width: 600px;
-      padding: 1rem;
-      box-sizing: border-box;
-    }
-    h1 {
-      text-align: center;
-      font-size: 2.6rem;
-      margin-bottom: 1rem;
-    }
-    /* Style the form elements */
-    form {
-      display: flex;
-      flex-direction: column;
-    }
-    label {
-      margin: 0.5rem 0 0.25rem;
-    }
-    input {
-      padding: 0.5rem;
-      margin-bottom: 1rem;
-      font-size: 1rem;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-    }
-    button {
-      padding: 0.75rem;
-      font-size: 1rem;
-      font-weight: 700;
-      border: none;
-      border-radius: 5rem;
-      background-color: #111111;
-      color: #fff;
-      cursor: pointer;
-    }
-    button:hover {
-      background-color: #005fa3;
-    }
-    #message {
-      margin-top: 1rem;
-      text-align: center;
-      font-weight: bold;
-    }
-    .lead-form {
-      border: 1px solid #dddddb;
-      border-radius: 1rem;
-      background-color: #fbfbfb;
-      padding: 2rem 3rem;
-    }
+    body { font-family: Arial, sans-serif; max-width: 800px; margin: 2em auto; padding: 1em; }
+    input, textarea { width: 100%; margin-bottom: 1em; padding: 0.5em; font-size: 1em; }
+    button { padding: 0.5em 1em; font-size: 1em; }
+    .output { margin-top: 1em; padding: 1em; background: #f4f4f4; }
   </style>
 </head>
 <body>
-  <div class="container">
-    <h1>Leads for your blobs.</h1>
-    <p style="text-align:center;">A tiny serverless form that catches leads and drops them into your Netlify blob bucket. No backend required.No backend required.</p>
-    <form id="leadForm" class="lead-form">
-      <label for="name">Name:</label>
-      <input type="text" id="name" name="name" required>
-
-      <label for="email">Email:</label>
-      <input type="email" id="email" name="email" required>
-
-      <button type="submit">Submit</button>
-    </form>
-    <div id="message"></div>
-  </div>
+  <h1>Minimal IPFS CMS</h1>
+  <form id="postForm">
+    <input type="text" id="title" placeholder="Post Title" required>
+    <textarea id="content" rows="10" placeholder="Post Content" required></textarea>
+    <button type="submit">Publish Post</button>
+  </form>
+  <div id="output" class="output"></div>
 
   <script>
-    document.getElementById('leadForm').addEventListener('submit', async function(event) {
+    // Create an IPFS client using a public endpoint (Infura in this example)
+    const ipfs = window.IpfsHttpClient.create({
+      host: 'ipfs.infura.io',
+      port: 5001,
+      protocol: 'https'
+    });
+
+    // Handle form submission
+    document.getElementById('postForm').addEventListener('submit', async (event) => {
       event.preventDefault();
       
-      // Gather form data
-      const name = document.getElementById('name').value;
-      const email = document.getElementById('email').value;
-      const lead = { name, email };
+      // Gather post data
+      const title = document.getElementById('title').value;
+      const content = document.getElementById('content').value;
+      const post = { title, content, date: new Date().toISOString() };
+      
+      // Convert post object to a Uint8Array buffer
+      const postBuffer = new TextEncoder().encode(JSON.stringify(post));
 
       try {
-        const response = await fetch('/.netlify/functions/leads', {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(lead)
-        });
-
-        const result = await response.json();
-
-        if (response.ok) {
-          document.getElementById('message').textContent = 'Thank you for signing up!';
-          document.getElementById('leadForm').reset();
-        } else {
-          document.getElementById('message').textContent = 'Error: ' + result.error;
-        }
+        // Add postBuffer to IPFS
+        const result = await ipfs.add(postBuffer);
+        // Get the CID from the result (works with recent ipfs-http-client versions)
+        const cid = result.path || result.cid.toString();
+        const gatewayURL = 'https://ipfs.io/ipfs/' + cid;
+        
+        // Display the CID and a link to view the post via a public gateway
+        document.getElementById('output').innerHTML =
+          `<p>Post published! CID: <code>${cid}</code></p>
+           <p>View your post: <a href="${gatewayURL}" target="_blank">${gatewayURL}</a></p>`;
       } catch (error) {
-        document.getElementById('message').textContent = 'Error: ' + error.message;
+        console.error('Error publishing post:', error);
+        document.getElementById('output').textContent =
+          'Error publishing post. Please check the console for details.';
       }
     });
   </script>
