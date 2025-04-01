@@ -1,97 +1,126 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
   <meta charset="UTF-8">
-  <!-- Enable responsive scaling on mobile devices -->
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Minimal IPFS CMS</title>
-  <!-- Include the IPFS HTTP client library via CDN -->
-  <script src="https://unpkg.com/ipfs-http-client/dist/index.min.js"></script>
+  <title>Minimal WebRTC Chatroom</title>
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      max-width: 800px;
-      margin: 2em auto;
-      padding: 1em;
-      box-sizing: border-box;
-    }
-    input, textarea {
-      width: 100%;
-      margin-bottom: 1em;
-      padding: 0.5em;
-      font-size: 1em;
-      box-sizing: border-box;
-    }
-    button {
-      padding: 0.5em 1em;
-      font-size: 1em;
-      cursor: pointer;
-    }
-    .output {
-      margin-top: 1em;
-      padding: 1em;
-      background: #f4f4f4;
-      word-wrap: break-word;
-    }
-    /* Responsive adjustments */
-    @media (max-width: 600px) {
-      body {
-        padding: 0.5em;
-        margin: 1em;
-      }
-      h1 {
-        font-size: 1.5em;
-      }
-      input, textarea, button {
-        font-size: 0.9em;
-      }
-    }
+    body { font-family: sans-serif; margin: 20px; }
+    #chat { border: 1px solid #ccc; height: 300px; overflow-y: auto; padding: 10px; margin-bottom: 10px; }
+    textarea { width: 100%; height: 100px; margin-bottom: 10px; }
+    input[type="text"] { width: 80%; }
   </style>
 </head>
 <body>
-  <h1>Minimal IPFS CMS</h1>
-  <form id="postForm">
-    <input type="text" id="title" placeholder="Post Title" required>
-    <textarea id="content" rows="10" placeholder="Post Content" required></textarea>
-    <button type="submit">Publish Post</button>
-  </form>
-  <div id="output" class="output"></div>
+  <h1>Minimal WebRTC Chatroom</h1>
+  <p>
+    This demo uses manual signaling – you (or your peer) must copy and paste the SDP (Session Description) between browsers.
+  </p>
+  <div>
+    <!-- Buttons for the different roles -->
+    <button id="createOffer">Create Offer (Caller)</button>
+    <button id="createAnswer">Create Answer (Callee)</button>
+    <button id="acceptAnswer">Accept Answer (Caller)</button>
+  </div>
+  <div>
+    <h3>SDP Exchange</h3>
+    <textarea id="localSDP" placeholder="Local SDP will appear here"></textarea>
+    <textarea id="remoteSDP" placeholder="Paste remote SDP here"></textarea>
+  </div>
+  <div>
+    <h3>Chat</h3>
+    <div id="chat"></div>
+    <input type="text" id="messageInput" placeholder="Type a message...">
+    <button id="sendMessage">Send</button>
+  </div>
 
   <script>
-    // Create an IPFS client using a public endpoint (Infura in this example)
-    const ipfs = window.IpfsHttpClient.create({
-      host: 'ipfs.infura.io',
-      port: 5001,
-      protocol: 'https'
+    let pc;
+    let dataChannel;
+    const configuration = {
+      iceServers: [{ urls: "stun:stun.l.google.com:19302" }]
+    };
+
+    // Utility to log messages to the chat div
+    function logMessage(message) {
+      const chatDiv = document.getElementById('chat');
+      const p = document.createElement('p');
+      p.textContent = message;
+      chatDiv.appendChild(p);
+      chatDiv.scrollTop = chatDiv.scrollHeight;
+    }
+
+    // Create a new RTCPeerConnection with ICE candidate handling
+    function createPeerConnection() {
+      const peer = new RTCPeerConnection(configuration);
+      peer.onicecandidate = event => {
+        if (!event.candidate) {
+          // ICE gathering finished: show the SDP in the local textarea
+          document.getElementById('localSDP').value = JSON.stringify(peer.localDescription);
+        }
+      };
+      return peer;
+    }
+
+    // --------------------
+    // Caller: Create an offer and data channel
+    document.getElementById('createOffer').addEventListener('click', async () => {
+      pc = createPeerConnection();
+
+      // Create a data channel for sending chat messages
+      dataChannel = pc.createDataChannel("chat");
+      dataChannel.onopen = () => logMessage("Data channel open");
+      dataChannel.onmessage = (event) => logMessage("Peer: " + event.data);
+
+      const offer = await pc.createOffer();
+      await pc.setLocalDescription(offer);
+      // The offer SDP will appear in the "Local SDP" textarea once ICE gathering is complete.
     });
 
-    // Handle form submission
-    document.getElementById('postForm').addEventListener('submit', async (event) => {
-      event.preventDefault();
-      
-      // Gather post data
-      const title = document.getElementById('title').value;
-      const content = document.getElementById('content').value;
-      const post = { title, content, date: new Date().toISOString() };
-      
-      // Convert post object to a Uint8Array buffer
-      const postBuffer = new TextEncoder().encode(JSON.stringify(post));
+    // --------------------
+    // Callee: Create an answer using the offer from the remote peer
+    document.getElementById('createAnswer').addEventListener('click', async () => {
+      const offerSDP = document.getElementById('remoteSDP').value;
+      if (!offerSDP) {
+        alert("Please paste the offer SDP into the 'Paste remote SDP' field.");
+        return;
+      }
+      pc = createPeerConnection();
 
-      try {
-        // Add postBuffer to IPFS
-        const result = await ipfs.add(postBuffer);
-        // Get the CID from the result (works with recent ipfs-http-client versions)
-        const cid = result.path || result.cid.toString();
-        const gatewayURL = 'https://ipfs.io/ipfs/' + cid;
-        
-        // Display the CID and a link to view the post via a public gateway
-        document.getElementById('output').innerHTML =
-          `<p>Post published! CID: <code>${cid}</code></p>
-           <p>View your post: <a href="${gatewayURL}" target="_blank">${gatewayURL}</a></p>`;
-      } catch (error) {
-        console.error('Error publishing post:', error);
-        document.getElementById('output').textContent =
-          'Error publishing post. Please check the console for details.';
+      // When the caller creates a data channel, this event will fire.
+      pc.ondatachannel = event => {
+        dataChannel = event.channel;
+        dataChannel.onopen = () => logMessage("Data channel open");
+        dataChannel.onmessage = (event) => logMessage("Peer: " + event.data);
+      };
+
+      const offer = JSON.parse(offerSDP);
+      await pc.setRemoteDescription(offer);
+      const answer = await pc.createAnswer();
+      await pc.setLocalDescription(answer);
+      // The answer SDP will appear in the "Local SDP" textarea once ICE gathering is complete.
+    });
+
+    // --------------------
+    // Caller: Accept the answer sent back from the callee
+    document.getElementById('acceptAnswer').addEventListener('click', async () => {
+      const answerSDP = document.getElementById('remoteSDP').value;
+      if (!answerSDP) {
+        alert("Please paste the answer SDP into the 'Paste remote SDP' field.");
+        return;
+      }
+      const answer = JSON.parse(answerSDP);
+      await pc.setRemoteDescription(answer);
+    });
+
+    // --------------------
+    // Chat: Send a message over the data channel
+    document.getElementById('sendMessage').addEventListener('click', () => {
+      const input = document.getElementById('messageInput');
+      const message = input.value;
+      if (message && dataChannel && dataChannel.readyState === "open") {
+        dataChannel.send(message);
+        logMessage("You: " + message);
+        input.value = "";
       }
     });
   </script>
